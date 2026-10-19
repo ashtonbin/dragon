@@ -1,0 +1,33 @@
+# Shotgun and observer prototype
+
+Open `Assets/Scenes/FacilityPrototype.unity` and press Play, or launch `Builds/FacilityPrototype/FacilityPrototype.exe` with its adjacent files. Start now opens Story and Sandbox. See [STORY_PROTOTYPE.md](STORY_PROTOTYPE.md) for the pistol, fists, knife observers, loadouts and Level 1 mission.
+
+Left click fires the pump shotgun. Each trigger pull launches twelve independently simulated buckshot pellets in a filled 3-degree cone. Swept collision checks follow their flight from the muzzle, with gravity and camera-to-barrel obstruction checks. The action cycles in 0.95 seconds. Strong shoulder travel and camera kick accompany an 85 ms muzzle flash, a 45 ms unshadowed flash light, smoke, a heavy report, mechanical pump audio, and an ejected shell. The first click after Escape captures the mouse without firing. Movement settings remain unchanged.
+
+The latest audio pass adds a deeper concussive shotgun report, recorded observer pain screams and quiet zombie moans. See [AUDIO_DESIGN.md](AUDIO_DESIGN.md) for source levels, editing and verification, and [AUDIO_CREDITS.md](AUDIO_CREDITS.md) for recorded voice sources.
+
+The black-eyed maintenance worker stands in the factory, in front of the large machine at approximately `(10, 0, 21)`. He tracks the player quietly until hit. Three connecting body discharges kill him; multiple pellets from one shell count once for health. A head hit explodes the head and is immediately fatal. The thin injury bar appears above his head after damage. Restart Play or relaunch the build to reset him.
+
+Hits remove outer body pieces and expose recessed wound cavities. Aimed hits sever the corresponding shoulder, elbow, hip, or knee joint, including the dependent limb chain. Detached parts remain physical and can be shot again. Every connecting nonfatal shell knocks the body backward into a jointed ragdoll, then blends into a get-up after about 1.5 seconds of physics. Recovery checks capsule clearance and support around its footprint. Survivors with leg damage crawl rather than regrowing legs. Intact-legged survivors stand, approach, and shove. Lethal hits leave the body physical; corpse shots produce more impact damage and blood.
+
+Effects are bounded to 220 blood streaks, 36 physical tissue/bone fragments, 96 surface stains, eight spent shells, 128 persistent bullet scars, and 192 short dust particles. Existing effects are recycled; fragments and blood stains expire after 45 and 120 seconds. Head and limb hits use dedicated larger fragment bursts. Surface marks fit against their actual supporting geometry, including a footprint check at corners. The corpse remains. Player health and enemy navigation are now implemented; ammunition economy and manual magazine reloads remain deferred.
+
+## Editing
+
+The shotgun is ordinary geometry under the Player's `Main Camera/Pump Shotgun`; the worker is under `Combat Subjects`. Meshes, materials, textures, audio, and the shell prefab are saved under `Assets/Generated/Combat`. The facility's area-identification and wayfinding signs have been removed; the small abandoned-samples warning remains.
+
+`Tools > Facility > Install Shotgun and Subject` first saves a timestamped recovery scene, then explicitly replaces the authored weapon and subject. It preserves the facility architecture, current baked lighting, player movement settings, and unrelated content. Reinstalling replaces manual edits to the weapon/subject; the recovery copy keeps their previous state. Ordinary Play and compilation do not regenerate them. Runtime creation is limited to the fixed effect pools.
+
+## Verification
+
+The standalone flag `-facilityImpactTest <absolute output directory>` runs the actual shotgun against the actual character, writes screenshots and `impact-receipt.json`, and exits. It checks twelve distinct pellets and delayed flight, a blocked wall shot with multiple supported scars, muzzle effects and recoil, three torso shots with two recoveries, a separate head explosion, all eight limb regions on fresh runtime-only clones, standing/crawling recovery, corpse hits, fixed effect capacities, and shader/log errors. The old `-facilityCombatTest` flag aliases this new check. Without an explicit flag the diagnostic does not run.
+
+Scene-reference, repeated-Play, scene-reopen, traversal and build receipts are saved under `.codex`. The latest impact run is described below. Performance figures describe the RTX 5070 development machine and do not establish lower-end hardware performance.
+
+Previous environment verification: four ambient loops, one listener, eight lightmaps and no persistent realtime world lights; save/reopen and two Play cycles passed. Both directions of the circuit and shortcut passed 34 checkpoints and 6,314 movement steps without jumping. The muzzle light is enabled only during firing and does not require an environment rebake.
+
+Verified October 17, 2026: `.codex/impact-second/impact-receipt.json` passed with no failures. Fourteen actual discharges launched 168 pellets with 168 impacts. The wall blocked damage and received twelve scars. Camera kick measured 3.81 degrees; shoulder travel was 0.19 m and weapon rotation about 14 degrees shortly after firing. Both torso knockdowns recovered, the third torso shell killed, the separate head shot exploded the head, and all eight limb cases detached the correct joint/chain and recovered on supported ground. Arm survivors stood; leg survivors crawled. No damage case reattached a limb, exceeded effect capacities, or produced shader/log errors. The initial failed run is retained in `.codex/impact-first` for comparison; its shader and footing defects were corrected before the passing build.
+
+Save/reopen validation, two further Play cycles (469 facility objects each), and the full circuit/shortcut traversal passed again; receipts are `.codex/impact-reopen.json`, `.codex/impact-playtest.json`, and `.codex/impact-traverse.json`. The Windows build receipt is `.codex/impact-build.json`. Visual captures and the standalone log accompany each diagnostic receipt.
+
+The final six-view standalone environment check also exited 0: `.codex/impact-environment/smoke-receipt.json`. It retained eight lightmaps, sixteen baked lights, four playing ambient loops, one listener, and no persistent realtime lights or shader/log errors. GPU timestamps were unavailable; the collected uncapped CPU frame intervals do not certify lower-end performance.
