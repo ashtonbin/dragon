@@ -76,6 +76,7 @@ public static class FacilityPlayerArsenalAuthoring
         inventory.player = player; inventory.shotgun = shotgun; inventory.pistol = pistol; inventory.fists = fists;
         inventory.shotgunModel = shotgunRoot;
         inventory.pistolModel = pistolRoot.transform; inventory.fistsModel = hands.transform; inventory.viewmodel = motion;
+        FacilityM1911Authoring.Build(inventory);
         inventory.ConfigureLoadout(true);
         EditorUtility.SetDirty(shotgun); EditorUtility.SetDirty(pistol); EditorUtility.SetDirty(fists);
         EditorUtility.SetDirty(inventory); EditorUtility.SetDirty(motion);
@@ -85,9 +86,7 @@ public static class FacilityPlayerArsenalAuthoring
 
     public static GameObject BuildWorldPistol(Transform parent, Vector3 localPosition)
     {
-        EnsureFolder(AssetRoot + "/Meshes"); EnsureFolder(AssetRoot + "/Materials");
-        GameObject root = Model(parent, "Service Pistol Pickup");
-        BuildPistolGeometry(root.transform, false, out _, out _);
+        GameObject root = FacilityM1911Authoring.BuildWorld(parent);
         root.transform.localPosition = localPosition;
         root.transform.localRotation = Quaternion.Euler(0f, 0f, 90f);
         return root;
@@ -348,7 +347,7 @@ public static class FacilityPlayerArsenalAuthoring
             new Vector2(-.5f,-.5f),new Vector2(-.5f,.5f),new Vector2(.5f,.5f),new Vector2(.5f,-.5f) }), material);
         go.transform.localPosition = position; go.transform.localScale = size; return go;
     }
-    private static Mesh Extrusion(string name, float width, Vector2[] profile)
+    internal static Mesh Extrusion(string name, float width, Vector2[] profile)
     {
         Mesh cached = LoadMesh(name); if (cached != null) return cached;
         MeshBuilder b = new MeshBuilder();
@@ -392,7 +391,7 @@ public static class FacilityPlayerArsenalAuthoring
         return SaveMesh(name,b.Build(name));
     }
     private static float Cross(Vector2 a,Vector2 b)=>a.x*b.y-a.y*b.x;
-    private static Mesh Cylinder(string name, float radius, float length, int sides)
+    internal static Mesh Cylinder(string name, float radius, float length, int sides)
     {
         Mesh cached=LoadMesh(name); if(cached!=null)return cached;
         MeshBuilder b=new MeshBuilder();
@@ -404,7 +403,7 @@ public static class FacilityPlayerArsenalAuthoring
         }
         return SaveMesh(name,b.Build(name));
     }
-    private static Mesh Tube(string name,float outer,float inner,float length,int sides)
+    internal static Mesh Tube(string name,float outer,float inner,float length,int sides)
     {
         Mesh cached=LoadMesh(name); if(cached!=null)return cached;
         MeshBuilder b=new MeshBuilder();
@@ -417,7 +416,7 @@ public static class FacilityPlayerArsenalAuthoring
         }
         return SaveMesh(name,b.Build(name));
     }
-    private static Mesh Loft(string name,Vector3[] centres,float[] widths,float[] heights,int sides)
+    internal static Mesh Loft(string name,Vector3[] centres,float[] widths,float[] heights,int sides)
     {
         Mesh cached=LoadMesh(name);if(cached!=null)return cached;
         MeshBuilder b=new MeshBuilder();Vector3[,] rings=new Vector3[centres.Length,sides];
@@ -432,7 +431,7 @@ public static class FacilityPlayerArsenalAuthoring
         for(int i=0;i<sides;i++){int next=(i+1)%sides,last=centres.Length-1;b.Triangle(centres[0],rings[0,next],rings[0,i]);b.Triangle(centres[last],rings[last,i],rings[last,next]);}
         return SaveMesh(name,b.Build(name));
     }
-    private static Mesh Flash()
+    internal static Mesh Flash()
     {
         const string name="Pistol muzzle star V1";Mesh cached=LoadMesh(name);if(cached!=null)return cached;
         MeshBuilder b=new MeshBuilder();Vector3 centre=new Vector3(0f,0f,.018f);

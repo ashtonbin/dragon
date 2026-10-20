@@ -113,7 +113,10 @@ public sealed class FacilityVehicleExtractionSmokeTest : MonoBehaviour
             "Cash alone cannot board the car or pay the account.");
         yield return Interact(director.goldPickup);
         Require(director.HasCash && director.HasGold && director.Stage == FacilityStoryStage.ReturnToSedan,
-            "Retrieving both real vault loot piles advances to the return-to-car objective.");
+            "Retrieving both real vault loot piles advances to the final squad objective.");
+        Require(!director.ExtractionUnlocked && !extraction.CanBoard(out _),
+            "Both loot items cannot bypass the undefeated final SWAT squad.");
+        yield return FacilityEliteDiagnosticCombat.DefeatSquad(director);
         Require(courtesy.passengerDoor.IsOpen && !courtesy.driverDoor.IsOpen &&
             !director.IsInteractionAvailable(director.sedanExit, out _) && !director.TryInteract(director.sedanExit, out _) &&
             !extraction.IsBoarding && FacilityEconomy.Cash == 0,

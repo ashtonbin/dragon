@@ -19,7 +19,7 @@ public sealed class FacilityWeaponInventory : MonoBehaviour
     public bool HasShotgun { get; private set; }
     public bool HasAK47 { get; private set; }
     public FacilityWeaponKind SelectedWeapon { get; private set; }
-    public string CurrentName => SelectedWeapon == FacilityWeaponKind.Fists ? "FISTS" : SelectedWeapon == FacilityWeaponKind.Pistol ? "PISTOL" : SelectedWeapon == FacilityWeaponKind.Shotgun ? "PUMP SHOTGUN" : "AK-47";
+    public string CurrentName => SelectedWeapon == FacilityWeaponKind.Fists ? "FISTS" : SelectedWeapon == FacilityWeaponKind.Pistol ? "M1911" : SelectedWeapon == FacilityWeaponKind.Shotgun ? "PUMP SHOTGUN" : "AK-47";
     public bool IsVisible => visible;
     private bool visible = true, configured;
 
@@ -36,6 +36,7 @@ public sealed class FacilityWeaponInventory : MonoBehaviour
         HasPistol = sandbox;
         HasShotgun = sandbox;
         HasAK47 = sandbox;
+        if (pistol != null) pistol.ResetForRun();
         if (ak47 != null) ak47.ResetForRun();
         Equip(sandbox ? FacilityWeaponKind.Shotgun : FacilityWeaponKind.Fists);
     }
@@ -57,8 +58,11 @@ public sealed class FacilityWeaponInventory : MonoBehaviour
     {
         if ((kind == FacilityWeaponKind.Pistol && !HasPistol) || (kind == FacilityWeaponKind.Shotgun && !HasShotgun) ||
             (kind == FacilityWeaponKind.AK47 && (!HasAK47 || ak47 == null || ak47Model == null))) return false;
+        bool changed = SelectedWeapon != kind;
+        if (SelectedWeapon == FacilityWeaponKind.Pistol && changed && pistol != null) pistol.CancelReload();
         if (SelectedWeapon == FacilityWeaponKind.AK47 && kind != SelectedWeapon && ak47 != null) ak47.CancelReload();
         SelectedWeapon = kind;
+        if (kind == FacilityWeaponKind.Pistol && changed && pistol != null) pistol.RequireFreshTrigger();
         if (viewmodel != null)
         {
             if (kind == FacilityWeaponKind.AK47)
@@ -69,8 +73,8 @@ public sealed class FacilityWeaponInventory : MonoBehaviour
                     new Vector3(.29f, -.28f, .43f), new Vector3(0f, -4f, 0f),
                     new Vector3(0f, .060f, -.205f), new Vector3(-15f, .5f, 3.4f));
             else if (kind == FacilityWeaponKind.Pistol)
-                viewmodel.SelectModel(pistolModel, null, new Vector3(.22f, -.24f, .46f), new Vector3(0f, -3f, 0f),
-                    new Vector3(0f, .036f, -.095f), new Vector3(-12f, 1f, 2f));
+                viewmodel.SelectModel(pistolModel, null, new Vector3(.18f, -.21f, .42f), new Vector3(0f, -5f, 0f),
+                    new Vector3(0f, .044f, -.115f), new Vector3(-14f, .7f, 1.7f));
             else
                 viewmodel.SelectModel(fistsModel, null, new Vector3(0f, -.24f, .32f), Vector3.zero,
                     new Vector3(0f, .010f, -.025f), new Vector3(-2f, 0f, 0f));
@@ -79,7 +83,11 @@ public sealed class FacilityWeaponInventory : MonoBehaviour
         return true;
     }
 
-    public void SetVisible(bool value) { visible = value; RefreshVisible(); }
+    public void SetVisible(bool value)
+    {
+        if (!value && pistol != null) pistol.CancelReload();
+        visible = value; RefreshVisible();
+    }
     public bool CanUse(FacilityWeaponKind kind) => visible && SelectedWeapon == kind && FacilityGameSession.GameplayWeaponAllowed;
 
     private void RefreshVisible()

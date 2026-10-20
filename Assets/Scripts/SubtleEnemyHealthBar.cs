@@ -26,7 +26,7 @@ public sealed class SubtleEnemyHealthBar : MonoBehaviour
         if (!visible || fill == null) return;
         Vector3 direction = transform.position - (player.position + Vector3.up * 1.65f);
         if (direction.sqrMagnitude > .0001f) transform.rotation = Quaternion.LookRotation(direction, Vector3.up);
-        float fraction = 1f - owner.HitsTaken / 3f;
+        float fraction = Mathf.Clamp01(1f - owner.HitsTaken / (float)Mathf.Max(1, owner.hitsToKill));
         Vector3 scale = fill.localScale;
         scale.x = fillWidth * fraction;
         fill.localScale = scale;

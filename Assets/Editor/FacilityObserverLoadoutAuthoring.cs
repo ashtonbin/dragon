@@ -97,6 +97,7 @@ public static class FacilityObserverLoadoutAuthoring
         Piece(knife,"Pointed beveled blade",Blade(),steel,Vector3.zero,Vector3.one);
         Piece(knife,"Blade cutting edge",Edge(),edge,Vector3.zero,Vector3.one);
         guard.knifeProp=knife;
+        FacilityCharacterCastAuthoring.Apply(actor);
         EditorUtility.SetDirty(actor);EditorUtility.SetDirty(outfit);EditorUtility.SetDirty(guard);
     }
 

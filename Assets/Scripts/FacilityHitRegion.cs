@@ -24,6 +24,7 @@ public sealed class FacilityHitRegion : MonoBehaviour
     public bool IsDetached { get; internal set; }
     public bool JointSevered { get; internal set; }
     internal int lastPelletShot = int.MinValue;
+    internal int limbHits;
 
     public bool IsLimb => kind != FacilityBodyRegion.Head && kind != FacilityBodyRegion.Torso && kind != FacilityBodyRegion.Pelvis;
 

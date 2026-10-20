@@ -31,12 +31,14 @@ public sealed class FacilityStoryDirector : MonoBehaviour
     public FacilityVehicleExtraction vehicleExtraction;
     public FacilityVaultDrill vaultDrill;
     public FacilityPoliceWaves policeWaves;
+    public FacilityEliteSoundtrack eliteSoundtrack;
     [Min(.5f)] public float lobbyEntryRadius = 4f;
     [Min(1f)] public float interactionRange = 2.7f;
     public FacilityStoryStage Stage { get; private set; }
     public bool HasCash { get; private set; }
     public bool HasGold { get; private set; }
     public bool HasDrill { get; private set; }
+    public bool ExtractionUnlocked => HasCash && HasGold && policeWaves != null && policeWaves.EliteTeamDefeated;
     public bool VaultOpen => vaultDrill != null && vaultDrill.IsComplete;
     public bool AlarmActive { get; private set; }
     public bool HasBegun { get; private set; }
@@ -50,6 +52,8 @@ public sealed class FacilityStoryDirector : MonoBehaviour
     private float nextStatusRefreshAt;
     private float alarmStartedAt;
     private MaterialPropertyBlock alarmProperties;
+    private bool finalAssaultTriggered, squadClearPresented;
+    private float eliteWarningStartedAt;
 
     private void Awake()
     {
@@ -102,6 +106,9 @@ public sealed class FacilityStoryDirector : MonoBehaviour
             (FacilityGameSession.Instance == null || FacilityGameSession.Instance.CurrentState == FacilityGameState.Playing) &&
             Time.timeScale > 0f && (health == null || !health.IsDead);
         if (!playing || Stage == FacilityStoryStage.Completed) { SetInteractionPrompt(""); return; }
+        BeginFinalAssaultIfReady();
+        if (finalAssaultTriggered && !squadClearPresented && policeWaves != null && policeWaves.EliteTeamDefeated)
+        { squadClearPresented = true; UpdateObjective(); }
         if (Stage == FacilityStoryStage.EnterFacility)
         {
             Vector3 target = lobbyEntry != null ? lobbyEntry.position : receptionist != null ? receptionist.transform.position : Vector3.positiveInfinity;
@@ -164,6 +171,8 @@ public sealed class FacilityStoryDirector : MonoBehaviour
             case FacilityStoryInteractionKind.Sedan:
                 if (!HasCash || !HasGold)
                 { reason = !HasCash && !HasGold ? "Retrieve both the cash and gold before leaving." : !HasCash ? "Retrieve the vault cash before leaving." : "Retrieve the vault gold before leaving."; return false; }
+                if (!ExtractionUnlocked)
+                { reason = "Eliminate the entire SWAT team before leaving."; return false; }
                 if (item != sedanExit || vehicleExtraction == null)
                 { reason = "Get into the car's driver seat to leave."; return false; }
                 return vehicleExtraction.CanBoard(out reason);
@@ -208,8 +217,19 @@ public sealed class FacilityStoryDirector : MonoBehaviour
                 if (vehicleExtraction == null || !vehicleExtraction.BeginBoarding(this, item, out reason)) return false;
                 break;
         }
+        BeginFinalAssaultIfReady();
         reason = "";
         return true;
+    }
+
+    void BeginFinalAssaultIfReady()
+    {
+        if (finalAssaultTriggered || !HasCash || !HasGold || policeWaves == null || Stage == FacilityStoryStage.Completed) return;
+        if (!policeWaves.BeginEliteAssault()) return;
+        finalAssaultTriggered = true; eliteWarningStartedAt = Time.time;
+        eliteSoundtrack?.BeginEscalation();
+        shownStatus = null; nextStatusRefreshAt = 0f;
+        UpdateObjective(); UpdateHeistStatus();
     }
 
     /// <summary>Only the completed physical driver-seat entry may finish and pay the mission.</summary>
@@ -217,7 +237,7 @@ public sealed class FacilityStoryDirector : MonoBehaviour
     {
         FacilityGameSession session = FacilityGameSession.Instance;
         if (source == null || source != vehicleExtraction || !source.IsSeated || item == null || item != sedanExit || item.Consumed ||
-            !HasBegun || !HasCash || !HasGold || Stage != FacilityStoryStage.ReturnToSedan || Time.timeScale <= 0f ||
+            !HasBegun || !ExtractionUnlocked || Stage != FacilityStoryStage.ReturnToSedan || Time.timeScale <= 0f ||
             (health != null && health.IsDead) || (session != null && (session.CurrentState != FacilityGameState.Playing || session.CurrentMode != FacilityGameMode.Story)))
             return false;
         item.Consume(); Advance(FacilityStoryStage.Completed);
@@ -225,6 +245,7 @@ public sealed class FacilityStoryDirector : MonoBehaviour
         if (alarmSource != null) alarmSource.Stop();
         if (policeWaves != null) policeWaves.StopAssault();
         session?.CompleteStoryLevel();
+        eliteSoundtrack?.StopEscalation();
         return true;
     }
 
@@ -312,13 +333,16 @@ public sealed class FacilityStoryDirector : MonoBehaviour
             case FacilityStoryStage.TakePistol: text = "Collect your weapons and vault drill from the car."; break;
             case FacilityStoryStage.FindVault: text = VaultOpen ? (HasCash ? "Cash secured. Retrieve the gold." : HasGold ? "Gold secured. Retrieve the cash." : "Vault open. Retrieve both the cash and gold.") : "ALARM ACTIVE. Find the vault and install the drill."; break;
             case FacilityStoryStage.DrillingVault: text = "Defend the drill. The vault opens in 45 seconds. Police reinforcements arrive every 15 seconds."; break;
-            case FacilityStoryStage.ReturnToSedan: text = "Cash and gold secured. Open the driver door and get into the driver's seat. Payout: $2,500."; break;
+            case FacilityStoryStage.ReturnToSedan: text = ExtractionUnlocked ?
+                "SWAT team eliminated. Open the car's driver door and get into the driver's seat. Payout: $2,500." :
+                "Cash and gold secured. Elite SWAT incoming. Eliminate the entire squad before leaving."; break;
             default: text = "Cash and gold recovered. Extraction complete. $2,500 banked."; break;
         }
         int step = Stage == FacilityStoryStage.RetrieveDrill || Stage == FacilityStoryStage.TakePistol ? 1 : Stage == FacilityStoryStage.EnterFacility ? 2 :
             Stage == FacilityStoryStage.EliminateReceptionist ? 3 : Stage == FacilityStoryStage.DrillingVault ? 5 :
-            Stage == FacilityStoryStage.FindVault ? (VaultOpen ? 6 : 4) : 7;
-        typedObjective.SetObjective("NIGHT DEPOSIT / OBJECTIVE", text, step, 7);
+            Stage == FacilityStoryStage.FindVault ? (VaultOpen ? 6 : 4) :
+            Stage == FacilityStoryStage.Completed || ExtractionUnlocked ? 8 : 7;
+        typedObjective.SetObjective("NIGHT DEPOSIT / OBJECTIVE", text, step, 8);
     }
 
     private static string GetAction(FacilityStoryInteractable item)
@@ -342,12 +366,26 @@ public sealed class FacilityStoryDirector : MonoBehaviour
     {
         if (heistStatusPanel != null && heistStatusPanel.activeSelf != AlarmActive) heistStatusPanel.SetActive(AlarmActive);
         if (!AlarmActive) return;
+        bool elite = finalAssaultTriggered;
+        float pulse = .5f + .5f * Mathf.Sin((Time.time - eliteWarningStartedAt) * Mathf.PI * 2f / 2.6f);
+        if (heistStatusText != null) heistStatusText.color = elite ?
+            (ExtractionUnlocked ? new Color(.74f,.84f,.78f) : new Color(1f,.12f,.095f,Mathf.Lerp(.57f,1f,pulse))) : new Color(.78f,.85f,.84f);
+        if (heistStatusPanel != null)
+        {
+            Image backing = heistStatusPanel.GetComponent<Image>();
+            if (backing != null) backing.color = elite && !ExtractionUnlocked ?
+                Color.Lerp(new Color(.045f,.012f,.016f,.89f),new Color(.10f,.015f,.02f,.96f),pulse) : new Color(.016f,.03f,.037f,.87f);
+        }
         if (heistStatusText == null || Time.time < nextStatusRefreshAt) return;
         nextStatusRefreshAt = Time.time + .1f;
         string assaultStatus = AlarmActive && policeWaves != null ? "POLICE IN  //  " +
             Mathf.CeilToInt(policeWaves.SecondsUntilNextWave).ToString("00") + "s   WAVE " + policeWaves.WaveNumber.ToString("00") +
             "   ACTIVE " + policeWaves.ActivePoliceCount : "ALARM  //  STANDBY";
         string status = assaultStatus;
+        if (elite && policeWaves != null)
+            status = ExtractionUnlocked ? "SWAT TEAM ELIMINATED\nEXTRACTION UNLOCKED" :
+                "SWAT TEAM INCOMING\nGET READY" + (policeWaves.EliteTeamArrived ? "  //  " +
+                Mathf.Max(0,policeWaves.eliteTeamSize-policeWaves.EliteKilledCount).ToString("00") + " REMAIN" : "");
         if (status == shownStatus) return;
         shownStatus = status;
         heistStatusText.text = status;

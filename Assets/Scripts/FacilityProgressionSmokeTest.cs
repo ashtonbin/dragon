@@ -164,7 +164,10 @@ public sealed class FacilityProgressionSmokeTest : MonoBehaviour
             (goldFirst ? "Gold" : "Cash") + " alone cannot complete extraction.");
         yield return Interact(goldFirst ? director.cashPickup : director.goldPickup);
         Require(director.HasCash && director.HasGold && director.Stage == FacilityStoryStage.ReturnToSedan,
-            "Both loot orders advance to extraction only after both are collected.");
+            "Both loot orders advance to the final encounter only after both are collected.");
+        Require(!director.ExtractionUnlocked && !director.IsInteractionAvailable(director.sedanExit,out _),
+            "Both loot items trigger the squad and keep extraction locked until it is killed.");
+        yield return FacilityEliteDiagnosticCombat.DefeatSquad(director);
         FacilityVehicleExtraction extraction = director.vehicleExtraction;
         Require(extraction != null && extraction.driverDoor != null, "Extraction uses the saved physical driver's seat and door.");
         if (!extraction.driverDoor.IsOpen)
@@ -176,7 +179,7 @@ public sealed class FacilityProgressionSmokeTest : MonoBehaviour
         float completedBy = Time.realtimeSinceStartup + 5f;
         while (session.CurrentState != FacilityGameState.LevelComplete && Time.realtimeSinceStartup < completedBy) yield return null;
         Require(director.Stage == FacilityStoryStage.Completed && session.CurrentState == FacilityGameState.LevelComplete &&
-            extraction.IsSeated && !FacilityGameSession.GameplayWeaponAllowed, "Both loot piles permit animated driver-seat extraction and freeze the completed run.");
+            extraction.IsSeated && !FacilityGameSession.GameplayWeaponAllowed, "Both loot piles and the defeated final squad permit animated driver-seat extraction and freeze the completed run.");
         yield return Capture(goldFirst ? "04_gold_first_extraction" : "03_cash_first_extraction");
     }
 

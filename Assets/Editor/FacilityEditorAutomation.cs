@@ -83,6 +83,14 @@ public static class FacilityEditorAutomation
             Scene scene = SceneManager.GetActiveScene();
             switch (command)
             {
+                case "m1911": Reply(true, FacilityM1911Authoring.Install()); break;
+                case "m1911-capture": FacilityM1911Authoring.Capture(scene); Reply(true,"Saved silver M1911 studio previews."); break;
+                case "sandbox-elite": Reply(true, FacilitySandboxEliteButton.Install()); break;
+                case "elite-swat": Reply(true, FacilityEliteEncounterAuthoring.Install()); break;
+                case "validate-elite": Reply(true, FacilityEliteEncounterAuthoring.Validate(scene)); break;
+                case "characters": Reply(true, FacilityCharacterCastAuthoring.Install()); break;
+                case "validate-characters": Reply(true, FacilityCharacterCastAuthoring.Validate(scene)); break;
+                case "character-capture": FacilityCharacterCastAuthoring.Capture(scene); Reply(true, "Saved stylized cast previews in .codex/character-previews."); break;
                 case "create":
                     FacilitySceneGenerator.CreateExplorationScene();
                     Reply(true, SceneManager.GetActiveScene().path);

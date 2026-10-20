@@ -25,6 +25,11 @@ public sealed class FacilityHumanoid : MonoBehaviour
     public AudioClip deathSound;
     public Transform contactShadow;
     [Min(.1f)] public float pursuitSpeed = 1.65f;
+    [Min(1)] public int hitsToKill = 3;
+    [Min(1)] public int hitsToKnockDown = 1;
+    [Min(1)] public int hitsToSeverLimb = 1;
+    [Min(0)] public int helmetHitsToBreak;
+    public int HelmetHitsTaken { get; private set; }
     public bool IsHostile { get; set; }
     public int HitsTaken { get; private set; }
     public bool IsDead { get; private set; }
@@ -244,10 +249,19 @@ public sealed class FacilityHumanoid : MonoBehaviour
         if (!wasDead && !wasDetached) Attacked?.Invoke(this);
         if (struck.kind == FacilityBodyRegion.Head && !HeadExploded)
         {
-            ExplodeHead(struck, point, direction);
-            return;
+            if (!wasDead && HelmetHitsTaken < helmetHitsToBreak)
+            {
+                HelmetHitsTaken++;
+                GetComponent<FacilityEliteSwat>()?.RegisterHelmetHit();
+            }
+            else
+            {
+                ExplodeHead(struck, point, direction);
+                return;
+            }
         }
-        if (struck.IsLimb && !struck.JointSevered) Sever(struck, point, direction);
+        if (struck.IsLimb && !struck.JointSevered && ++struck.limbHits >= Mathf.Max(1, hitsToSeverLimb))
+            Sever(struck, point, direction);
         if (wasDead || struck.IsDetached)
         {
             // A detached body part retains its owner and can be severed further after recovery.
@@ -261,12 +275,17 @@ public sealed class FacilityHumanoid : MonoBehaviour
         if (newShell)
         {
             knifeGuard?.Activate();
-            HitsTaken = Mathf.Min(3, HitsTaken + 1);
-            bool fatal = HitsTaken >= 3;
+            HitsTaken = Mathf.Min(Mathf.Max(1, hitsToKill), HitsTaken + 1);
+            bool fatal = HitsTaken >= Mathf.Max(1, hitsToKill);
             gore?.Burst(point, direction, fatal);
             PlayVoice(fatal);
             if (fatal) Die(point, direction, struck);
-            else KnockDown(point, direction, struck);
+            else if (HitsTaken % Mathf.Max(1, hitsToKnockDown) == 0 || IsCrawling) KnockDown(point, direction, struck);
+            else
+            {
+                flinchUntil = Time.time + .18f;
+                if (!struck.body.isKinematic) ImpulseBody(struck.body, point, direction, 1.5f);
+            }
         }
         else if (!struck.IsDetached && !struck.body.isKinematic)
             ImpulseBody(struck.body, point, direction, 2.5f);
@@ -285,8 +304,8 @@ public sealed class FacilityHumanoid : MonoBehaviour
         if (IsDead) { ImpulseBody(struck.body, point, direction, 1.6f); return; }
         Attacked?.Invoke(this);
         knifeGuard?.Activate();
-        HitsTaken = Mathf.Min(3, HitsTaken + 1);
-        bool fatal = HitsTaken >= 3;
+        HitsTaken = Mathf.Min(Mathf.Max(1, hitsToKill), HitsTaken + 1);
+        bool fatal = HitsTaken >= Mathf.Max(1, hitsToKill);
         PlayVoice(fatal);
         if (fatal) Die(point, direction, struck, 2.1f, .65f);
         else
@@ -372,7 +391,7 @@ public sealed class FacilityHumanoid : MonoBehaviour
         gore?.BurstHead(region.transform.position, direction);
         // The complete head, including hair, eyes, ears and collider, becomes fragments rather than a floating face.
         region.gameObject.SetActive(false);
-        HitsTaken = 3;
+        HitsTaken = Mathf.Max(1, hitsToKill);
         if (!IsDead) { PlayVoice(true); Die(point, direction, null); }
     }
 

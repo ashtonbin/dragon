@@ -37,6 +37,7 @@ public sealed class FacilityGameSession : MonoBehaviour
     public Button startButton, mainQuitButton, resumeButton, restartButton, pauseQuitButton,
         deathRestartButton, deathQuitButton, observerSpawnButton, zombieSpawnButton;
     public Button storyButton, sandboxButton, modeBackButton, nextLevelButton, returnMainButton, completionQuitButton;
+    public Button eliteSwatSpawnButton;
     public FacilityGameState CurrentState { get; private set; }
     public FacilityGameMode CurrentMode { get; private set; }
     public int StoryLevelIndex { get; private set; }
@@ -70,6 +71,7 @@ public sealed class FacilityGameSession : MonoBehaviour
         Bind(deathRestartButton, RestartGame); Bind(deathQuitButton, QuitGame);
         Bind(observerSpawnButton, () => SelectCharacter(FacilitySpawnKind.Observer));
         Bind(zombieSpawnButton, () => SelectCharacter(FacilitySpawnKind.Zombie));
+        Bind(eliteSwatSpawnButton, () => SelectCharacter(FacilitySpawnKind.EliteSwat));
         Bind(storyButton, StartStory); Bind(sandboxButton, StartSandbox);
         Bind(modeBackButton, BackToTitle); Bind(nextLevelButton, NextStoryLevel); Bind(returnMainButton, ReturnToMainMenu);
         Bind(completionQuitButton, QuitGame);
@@ -138,7 +140,7 @@ public sealed class FacilityGameSession : MonoBehaviour
         }
         if (CurrentState == FacilityGameState.Placing && spawner != null && placementText != null)
         {
-            string hint = (spawner.Selection == FacilitySpawnKind.Zombie ? "Zombie" : "The Observer") + "  /  " + spawner.PlacementReason;
+            string hint = (spawner.Selection == FacilitySpawnKind.EliteSwat ? "Elite SWAT" : spawner.Selection == FacilitySpawnKind.Zombie ? "Zombie" : "The Observer") + "  /  " + spawner.PlacementReason;
             if (hint != lastPlacementHint)
             {
                 lastPlacementHint = hint;
@@ -213,7 +215,7 @@ public sealed class FacilityGameSession : MonoBehaviour
 
     public void CompleteStoryLevel()
     {
-        if (CurrentMode != FacilityGameMode.Story || storyDirector == null || !storyDirector.HasCash || !storyDirector.HasGold ||
+        if (CurrentMode != FacilityGameMode.Story || storyDirector == null || !storyDirector.ExtractionUnlocked ||
             storyDirector.Stage != FacilityStoryStage.Completed || storyDirector.vehicleExtraction == null || !storyDirector.vehicleExtraction.IsSeated ||
             CurrentState != FacilityGameState.Playing || (health != null && health.IsDead)) return;
         FacilityEconomy.AwardHeist();

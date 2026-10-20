@@ -58,3 +58,7 @@ into the clip.
 
 Reproduce with `.codex/audio-tools/import_shotgun_pump.py`; exact levels and
 SHA-256 hashes are saved in `.codex/audio-sources/shotgun-pump-import-report.json`.
+
+The final SWAT response cue, `Assets/Generated/Audio/Final Response - Eerie Pressure V1.wav`, is an original procedural composition authored by `FacilityEliteMusicAuthoring`. It contains no external recordings or samples.
+
+The four M1911 sounds in `Assets/Generated/M1911/Audio` are original procedural sound designs authored by `FacilityM1911AudioAuthoring`, with no external recordings or samples. The firing report combines a short pressure crack, low body, steel action, and restrained stereo reflections. Magazine handling, empty trigger, and slide release use separate mechanical clips; tactical reloads omit the slide release. All four assets are 48 kHz, 16-bit PCM WAVs with preserved peak headroom.

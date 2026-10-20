@@ -4,13 +4,15 @@ using UnityEngine.AI;
 using UnityEngine.InputSystem;
 using UnityEngine.Rendering;
 
-public enum FacilitySpawnKind { Observer, Zombie }
+public enum FacilitySpawnKind { Observer, Zombie, EliteSwat }
 
 /// <summary>Places saved character prefabs on reachable floors after testing the real character clearance.</summary>
 [DisallowMultipleComponent]
 public sealed class FacilitySpawnController : MonoBehaviour
 {
     public GameObject observerPrefab, zombiePrefab;
+    public GameObject eliteSwatPrefab;
+    public FacilityPoliceProjectiles policeProjectiles;
     public Material validPreviewMaterial, invalidPreviewMaterial;
     public Camera aimCamera;
     public RetroFPSController player;
@@ -123,13 +125,13 @@ public sealed class FacilitySpawnController : MonoBehaviour
         if (!HasSelection) { reason = "Choose a character first"; return false; }
         if (session != null && session.CurrentState != FacilityGameState.Placing) { reason = "Open the spawn menu first"; return false; }
         if (!ValidatePlacement(feet, out reason)) return false;
-        GameObject prefab = Selection == FacilitySpawnKind.Zombie ? zombiePrefab : observerPrefab;
+        GameObject prefab = Selection == FacilitySpawnKind.EliteSwat ? eliteSwatPrefab : Selection == FacilitySpawnKind.Zombie ? zombiePrefab : observerPrefab;
         if (prefab == null) { reason = "Character prefab is missing"; return false; }
         Vector3 facing = player != null ? player.transform.position - feet : Vector3.back;
         facing.y = 0;
         // Prefabs are deliberately saved inactive: bind the real player before any Awake or pool setup.
         GameObject actor = Instantiate(prefab, feet, facing.sqrMagnitude > .01f ? Quaternion.LookRotation(facing) : Quaternion.identity, spawnedRoot);
-        actor.name = Selection == FacilitySpawnKind.Zombie ? "Spawned Zombie" : "Spawned Observer";
+        actor.name = Selection == FacilitySpawnKind.EliteSwat ? "Spawned Elite SWAT" : Selection == FacilitySpawnKind.Zombie ? "Spawned Zombie" : "Spawned Observer";
         FacilityHumanoid humanoid = actor.GetComponent<FacilityHumanoid>();
         if (humanoid != null) humanoid.player = player != null ? player.transform : null;
         if (humanoid != null && humanoid.gore != null && humanoid.gore.ownerColliders != null && player != null)
@@ -141,6 +143,14 @@ public sealed class FacilitySpawnController : MonoBehaviour
         }
         FacilityZombie zombie = actor.GetComponent<FacilityZombie>();
         if (zombie != null) zombie.targetHealth = player != null ? player.GetComponent<FacilityPlayerHealth>() : null;
+        FacilityPoliceOfficer officer = actor.GetComponent<FacilityPoliceOfficer>();
+        if (officer != null)
+        {
+            humanoid.IsHostile = true;
+            officer.actor = humanoid;
+            officer.target = player != null ? player.GetComponent<FacilityPlayerHealth>() : null;
+            officer.projectileSystem = policeProjectiles;
+        }
         SubtleEnemyHealthBar bar = actor.GetComponentInChildren<SubtleEnemyHealthBar>(true);
         if (bar != null) bar.player = player != null ? player.transform : null;
         actor.SetActive(true);

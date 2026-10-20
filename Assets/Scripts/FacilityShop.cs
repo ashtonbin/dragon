@@ -175,7 +175,7 @@ public sealed class FacilityShop : MonoBehaviour
         walletText = Label(window.transform, "Account balance", "$0", new Rect(956, 148, 232, 39), 29, Gold, TextAnchor.MiddleRight);
         Label(window.transform, "Wallet persistence", "ACCOUNT SAVED AUTOMATICALLY", new Rect(958, 197, 228, 18), 9, Muted, TextAnchor.MiddleRight);
 
-        Transform pistolCard = Card(window.transform, 72, "01", "PISTOL", "SEMI-AUTOMATIC / SIDEARM", "Your first way in.\nFast handling. Precise fire.", "OWNED", Green);
+        Transform pistolCard = Card(window.transform, 72, "01", "SILVER M1911", ".45 / EIGHT-ROUND SIDEARM", "Stainless steel. Walnut grips.\nPrecise fire. R to reload.", "OWNED", Green);
         pistolButton = ActionButton(pistolCard, "Pistol owned", "OWNED / IN CAR", new Rect(19, 267, 306, 42), out Text pistolLabel);
         pistolLabel.fontSize = 13; pistolLabel.color = Green; pistolButton.interactable = false;
         Transform shotgunCard = Card(window.transform, 468, "02", "PUMP SHOTGUN", "PUMP-ACTION / CLOSE RANGE", "Heavy spread. Hard impact.\nMake every shell count.", "LOCKED", Muted);
@@ -218,15 +218,16 @@ public sealed class FacilityShop : MonoBehaviour
         Transform art = Box(parent, "Weapon illustration", new Rect(18, 49, 308, 92), new Color(.075f, .091f, .104f)).transform;
         for (int i = 0; i < 7; i++) Box(art, "Grid", new Rect(14 + i * 46, 0, 1, 92), new Color(.16f, .19f, .21f, .38f));
         Box(art, "Technical baseline", new Rect(12, 72, 284, 1), new Color(.24f, .29f, .30f));
-        Label(art, "Caliber", kind == FacilityWeaponKind.Pistol ? "SIDEARM" : kind == FacilityWeaponKind.Shotgun ? "12 GA" : "7.62", new Rect(12, 74, 280, 15), 8, Muted, TextAnchor.MiddleRight);
+        Label(art, "Caliber", kind == FacilityWeaponKind.Pistol ? ".45 ACP" : kind == FacilityWeaponKind.Shotgun ? "12 GA" : "7.62", new Rect(12, 74, 280, 15), 8, Muted, TextAnchor.MiddleRight);
         if (kind == FacilityWeaponKind.Pistol)
         {
+            steel=new Color(.69f,.73f,.77f);edge=new Color(.85f,.88f,.90f);
             Part(art, "Slide", 104, 22, 103, 17, steel);
             Part(art, "Slide highlight", 105, 22, 100, 2, edge);
             Part(art, "Muzzle", 205, 24, 8, 12, dark);
             Part(art, "Frame", 108, 38, 83, 7, steel);
             Part(art, "Grip", 108, 43, 29, 34, dark, -13);
-            Part(art, "Grip panel", 113, 46, 17, 27, new Color(.26f, .30f, .31f), -13);
+            Part(art, "Grip panel", 113, 46, 17, 27, wood, -13);
             Part(art, "Trigger guard", 142, 43, 24, 19, steel);
             Part(art, "Trigger guard opening", 146, 44, 16, 13, new Color(.075f, .091f, .104f));
             Part(art, "Trigger", 151, 43, 3, 9, edge, 16);

@@ -120,6 +120,7 @@ public static class FacilityZombieAuthoring
             actor.gore.ownerColliders = owned;
         }
         FacilityAudioAuthoring.ConfigureActor(actor);
+        FacilityCharacterCastAuthoring.Apply(actor);
         AssetDatabase.SaveAssets();
         return root;
     }

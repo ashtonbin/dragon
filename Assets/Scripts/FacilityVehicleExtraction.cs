@@ -41,6 +41,8 @@ public sealed class FacilityVehicleExtraction : MonoBehaviour
             return false;
         }
         if (director.Stage != FacilityStoryStage.ReturnToSedan) return false;
+        if (!director.ExtractionUnlocked)
+        { reason = "Eliminate the entire SWAT team before leaving."; return false; }
         if (!driverDoor.IsOpen || driverDoor.IsMoving)
         { reason = "Open the driver door, then get into the driver's seat."; return false; }
         RetroFPSController candidate = director.player;

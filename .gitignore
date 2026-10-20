@@ -75,3 +75,13 @@ crashlytics-build.properties
 /[Aa]ssets/[Ss]treamingAssets/aa/*
 .codex/
 .vscode/
+
+# Local recovery copies. Live generated meshes, materials, prefabs and lighting are source assets.
+/Assets/_Recovery/
+/Assets/_Recovery.meta
+/Assets/Scenes/Recovery/
+/Assets/Scenes/Recovery.meta
+/Assets/Scenes/*Recovery_*.unity
+/Assets/Scenes/*Recovery_*.unity.meta
+/Assets/Generated/Interface/Prefabs/AudioRecovery_*/
+/Assets/Generated/Interface/Prefabs/AudioRecovery_*.meta

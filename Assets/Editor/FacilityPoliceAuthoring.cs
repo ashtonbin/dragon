@@ -77,6 +77,7 @@ public static class FacilityPoliceAuthoring
             officer.gunReport=AssetDatabase.LoadAssetAtPath<AudioClip>("Assets/Generated/Arsenal/Audio/Service Pistol Concussion V1.wav");
             foreach(SubtleEnemyHealthBar bar in root.GetComponentsInChildren<SubtleEnemyHealthBar>(true))bar.player=null;
             FacilityBankAuthoring.Expression(actor);
+            FacilityCharacterCastAuthoring.Apply(actor);
             string path=AssetDatabase.GenerateUniqueAssetPath(Root+"/Prefabs/Armed Police Officer.prefab");
             GameObject prefab=PrefabUtility.SaveAsPrefabAsset(root,path);
             if(prefab==null)throw new InvalidOperationException("Could not save the armed police prefab.");

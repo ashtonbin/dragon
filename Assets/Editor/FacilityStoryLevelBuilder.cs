@@ -354,6 +354,7 @@ public sealed class FacilityStoryLevelBuilder
             guards.Add(guard); NavIgnore(actor.gameObject);
         }
         director.guards = guards.ToArray();
+        foreach (FacilityKnifeGuard guard in director.guards) FacilityCharacterCastAuthoring.Apply(guard.actor);
     }
 
     void Infrastructure(FacilityStoryDirector director)
